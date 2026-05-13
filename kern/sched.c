@@ -100,7 +100,20 @@ void sched_init_MLFQ(uint8 numOfLevels, uint8 *quantumOfEachLevel)
 
 	//TODO: [PROJECT 2026 -[6] CPU Scheduling MLFQ] sched_init_MLFQ()
 	// Write your code here, remove the panic and write your code
-	panic("sched_init_MLFQ() is not implemented yet...!!");
+	if (numOfLevels == 0)
+		panic("sched_init_MLFQ(): number of levels must be > 0");
+
+	num_of_ready_queues = numOfLevels;
+	env_ready_queues = kmalloc(num_of_ready_queues * sizeof(struct Env_Queue));
+	quantums = kmalloc(num_of_ready_queues * sizeof(uint8));
+
+	for (int i = 0; i < num_of_ready_queues; i++)
+	{
+		init_queue(&(env_ready_queues[i]));
+		quantums[i] = quantumOfEachLevel[i];
+	}
+
+	kclock_set_quantum(quantums[0]);
 
 	//[1] Create the ready queues and initialize them using init_queue()
 	//[2] Create the "quantums" array and initialize it by the given quantums in "quantumOfEachLevel[]"
@@ -112,7 +125,18 @@ struct Env* fos_scheduler_MLFQ()
 {
 	//TODO: [PROJECT 2026 -[7] CPU Scheduling MLFQ] fos_scheduler_MLFQ()
 	// Write your code here, remove the panic and write your code
-	panic("fos_scheduler_MLFQ() is not implemented yet...!!");
+	if (curenv != NULL && curenv->env_status == ENV_RUNNABLE)
+	{
+		int curr_level = curenv->priority;
+		if (curr_level < 0 || curr_level >= num_of_ready_queues)
+			curr_level = 0;
+
+		if (curr_level < (num_of_ready_queues - 1))
+			curr_level++;
+
+		curenv->priority = curr_level;
+		enqueue(&(env_ready_queues[curr_level]), curenv);
+	}
 
 	//Apply the MLFQ with the specified levels to pick up the next environment
 	//Note: the "curenv" (if exist) should be placed in its correct queue
@@ -126,6 +150,20 @@ struct Env* fos_scheduler_MLFQ()
 	//[3] If next env is found: Set the CPU quantum by the quantum of the selected level
 	//							,remove the selected env from its queue and return it
 	//	  Else, return NULL
+
+	for (int level = 0; level < num_of_ready_queues; level++)
+	{
+		if (!LIST_EMPTY(&(env_ready_queues[level])))
+		{
+			struct Env* next_env = dequeue(&(env_ready_queues[level]));
+			if (next_env != NULL)
+			{
+				next_env->priority = level;
+				kclock_set_quantum(quantums[level]);
+				return next_env;
+			}
+		}
+	}
 
 	return NULL;
 

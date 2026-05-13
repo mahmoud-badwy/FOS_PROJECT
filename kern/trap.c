@@ -459,7 +459,106 @@ void page_fault_handler(struct Env * curenv, uint32 fault_va)
 {
 	//TODO: [PROJECT 2026 -[5] Fault handler] page_fault_handler()
 	// Write your code here, remove the panic and write your code
-	panic("page_fault_handler() is not implemented yet...!!");
+	uint32 fault_page_va = ROUNDDOWN(fault_va, PAGE_SIZE);
+	uint32 ws_size = env_page_ws_get_size(curenv);
+
+	if (ws_size < curenv->page_WS_max_size)
+	{
+		struct Frame_Info *ptr_frame_info = NULL;
+		allocate_frame(&ptr_frame_info);
+		map_frame(curenv->env_page_directory, ptr_frame_info, (void*)fault_page_va, PERM_USER | PERM_WRITEABLE);
+
+		int pf_res = pf_read_env_page(curenv, (void*)fault_page_va);
+		if (pf_res == E_PAGE_NOT_EXIST_IN_PF)
+		{
+			if (fault_page_va >= USTACKBOTTOM && fault_page_va < USTACKTOP)
+			{
+				if (pf_add_empty_env_page(curenv, fault_page_va, 1) == E_NO_PAGE_FILE_SPACE)
+					panic("Page file is full while adding stack page");
+				pf_read_env_page(curenv, (void*)fault_page_va);
+			}
+			else
+			{
+				panic("Illegal memory access: page not in page file and not stack");
+			}
+		}
+
+		uint32 ws_index = curenv->page_last_WS_index;
+		for (uint32 i = 0; i < curenv->page_WS_max_size; i++)
+		{
+			uint32 idx = (ws_index + i) % curenv->page_WS_max_size;
+			if (env_page_ws_is_entry_empty(curenv, idx))
+			{
+				ws_index = idx;
+				break;
+			}
+		}
+
+		env_page_ws_set_entry(curenv, ws_index, fault_page_va);
+		curenv->ptr_pageWorkingSet[ws_index].sweeps_counter = 0;
+		curenv->page_last_WS_index = (ws_index + 1) % curenv->page_WS_max_size;
+		return;
+	}
+
+	// Replacement using Nth Chance CLOCK
+	uint32 victim_index = curenv->page_last_WS_index;
+	uint32 victim_va = 0;
+	while (1)
+	{
+		struct WorkingSetElement *ws_elem = &curenv->ptr_pageWorkingSet[victim_index];
+		if (ws_elem->empty == 0)
+		{
+			victim_va = ws_elem->virtual_address;
+			uint32 perm = pt_get_page_permissions(curenv, victim_va);
+			if (perm & PERM_USED)
+			{
+				pt_set_page_permissions(curenv, victim_va, 0, PERM_USED);
+				ws_elem->sweeps_counter = 0;
+			}
+			else
+			{
+				if (ws_elem->sweeps_counter >= page_WS_max_sweeps)
+				{
+					break;
+				}
+				ws_elem->sweeps_counter++;
+			}
+		}
+		victim_index = (victim_index + 1) % curenv->page_WS_max_size;
+	}
+
+	uint32 *ptr_page_table = NULL;
+	struct Frame_Info *victim_frame = get_frame_info(curenv->env_page_directory, (void*)victim_va, &ptr_page_table);
+	uint32 victim_perm = pt_get_page_permissions(curenv, victim_va);
+	if (victim_perm & PERM_MODIFIED)
+	{
+		pf_update_env_page(curenv, (void*)victim_va, victim_frame);
+	}
+	unmap_frame(curenv->env_page_directory, (void*)victim_va);
+	env_page_ws_clear_entry(curenv, victim_index);
+
+	struct Frame_Info *new_frame = NULL;
+	allocate_frame(&new_frame);
+	map_frame(curenv->env_page_directory, new_frame, (void*)fault_page_va, PERM_USER | PERM_WRITEABLE);
+
+	int pf_res = pf_read_env_page(curenv, (void*)fault_page_va);
+	if (pf_res == E_PAGE_NOT_EXIST_IN_PF)
+	{
+		if (fault_page_va >= USTACKBOTTOM && fault_page_va < USTACKTOP)
+		{
+			if (pf_add_empty_env_page(curenv, fault_page_va, 1) == E_NO_PAGE_FILE_SPACE)
+				panic("Page file is full while adding stack page");
+			pf_read_env_page(curenv, (void*)fault_page_va);
+		}
+		else
+		{
+			panic("Illegal memory access: page not in page file and not stack");
+		}
+	}
+
+	env_page_ws_set_entry(curenv, victim_index, fault_page_va);
+	curenv->ptr_pageWorkingSet[victim_index].sweeps_counter = 0;
+	curenv->page_last_WS_index = (victim_index + 1) % curenv->page_WS_max_size;
 
 
 
