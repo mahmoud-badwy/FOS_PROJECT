@@ -8,21 +8,21 @@
 #include <kern/kheap.h>
 #include <kern/utilities.h>
 
-//void on_clock_update_WS_time_stamps();
+
 extern uint32 isBufferingEnabled();
 extern void cleanup_buffers(struct Env* e);
 extern inline uint32 pd_is_table_used(struct Env *e, uint32 virtual_address);
 extern inline void pd_set_table_unused(struct Env *e, uint32 virtual_address);
 extern inline void pd_clear_page_dir_entry(struct Env *e, uint32 virtual_address);
-//================
+
 
 void sched_delete_ready_queues() ;
 uint32 isSchedMethodRR(){if(scheduler_method == SCH_RR) return 1; return 0;}
 uint32 isSchedMethodMLFQ(){if(scheduler_method == SCH_MLFQ) return 1; return 0;}
 
-//==================================================================================//
-//============================== HELPER FUNCTIONS ==================================//
-//==================================================================================//
+
+
+
 void init_queue(struct Env_Queue* queue)
 {
 	if(queue != NULL)
@@ -81,25 +81,23 @@ struct Env* find_env_in_queue(struct Env_Queue* queue, uint32 envID)
 	}
 	return NULL;
 }
-//==================================================================================//
 
 
-//==================================================================================//
-//============================= REQUIRED FUNCTIONS =================================//
-//==================================================================================//
+
+
+
+
 
 void sched_init_MLFQ(uint8 numOfLevels, uint8 *quantumOfEachLevel)
 {
-	//=========================================
-	//DON'T CHANGE THESE LINES=================
+
+
 	sched_delete_ready_queues();
 	scheduler_status = SCH_STOPPED;
 	scheduler_method = SCH_MLFQ;
-	//=========================================
-	//=========================================
 
-	//TODO: [PROJECT 2026 -[6] CPU Scheduling MLFQ] sched_init_MLFQ()
-	// Write your code here, remove the panic and write your code
+
+
 	if (numOfLevels == 0)
 		panic("sched_init_MLFQ(): number of levels must be > 0");
 
@@ -115,16 +113,15 @@ void sched_init_MLFQ(uint8 numOfLevels, uint8 *quantumOfEachLevel)
 
 	kclock_set_quantum(quantums[0]);
 
-	//[1] Create the ready queues and initialize them using init_queue()
-	//[2] Create the "quantums" array and initialize it by the given quantums in "quantumOfEachLevel[]"
-	//[3] Set the CPU quantum by the first level one
+
+
+
 }
 
 
 struct Env* fos_scheduler_MLFQ()
 {
-	//TODO: [PROJECT 2026 -[7] CPU Scheduling MLFQ] fos_scheduler_MLFQ()
-	// Write your code here, remove the panic and write your code
+
 	if (curenv != NULL && curenv->env_status == ENV_RUNNABLE)
 	{
 		int curr_level = curenv->priority;
@@ -138,18 +135,18 @@ struct Env* fos_scheduler_MLFQ()
 		enqueue(&(env_ready_queues[curr_level]), curenv);
 	}
 
-	//Apply the MLFQ with the specified levels to pick up the next environment
-	//Note: the "curenv" (if exist) should be placed in its correct queue
 
-	//Steps:
-	//======
-	//[1] If the current environment (curenv) exists, place it in the suitable queue
 
-	//[2] Search for the next env in the queues according to their priorities (first is highest)
 
-	//[3] If next env is found: Set the CPU quantum by the quantum of the selected level
-	//							,remove the selected env from its queue and return it
-	//	  Else, return NULL
+
+
+
+
+
+
+
+
+
 
 	for (int level = 0; level < num_of_ready_queues; level++)
 	{
@@ -170,9 +167,9 @@ struct Env* fos_scheduler_MLFQ()
 }
 
 
-//==================================================================================//
-//==================================================================================//
-//==================================================================================//
+
+
+
 
 
 
@@ -182,28 +179,28 @@ void fos_scheduler(void)
 	chk1();
 	scheduler_status = SCH_STARTED;
 
-	//This variable should be set to the next environment to be run (if any)
+
 	struct Env* next_env = NULL;
 
 	if (scheduler_method == SCH_RR)
 	{
-		// Implement simple round-robin scheduling.
-		// Pick next environment from the ready queue,
-		// and switch to such environment if found.
-		// It's OK to choose the previously running env if no other env
-		// is runnable.
 
-		//If the curenv is still exist, then insert it again in the ready queue
+
+
+
+
+
+
 		if (curenv != NULL)
 		{
 			enqueue(&(env_ready_queues[0]), curenv);
 		}
 
-		//Pick the next environment from the ready queue
+
 		next_env = dequeue(&(env_ready_queues[0]));
 
-		//Reset the quantum
-		//Reset the value of CNT0 for the next clock interval
+
+
 		kclock_set_quantum(quantums[0]);
 
 	}
@@ -213,14 +210,14 @@ void fos_scheduler(void)
 	}
 
 
-	//temporarily set the curenv by the next env JUST for checking the scheduler
-	//Then: reset it again
+
+
 	struct Env* old_curenv = curenv;
 	curenv = next_env ;
 	chk2(next_env);
 	curenv = old_curenv;
 
-	//cprintf("Scheduler select program '%s'\n", next_env->prog_name);
+
 	if(next_env != NULL)
 	{
 		env_run(next_env);
@@ -228,13 +225,13 @@ void fos_scheduler(void)
 	else
 	{
 		curenv = NULL;
-		//lcr3(K_PHYSICAL_ADDRESS(ptr_page_directory));
+
 		lcr3(phys_page_directory);
 
-		//cprintf("SP = %x\n", read_esp());
+
 
 		scheduler_status = SCH_STOPPED;
-		//cprintf("[sched] no envs - nothing more to do!\n");
+
 		while (1)
 			run_command_prompt(NULL);
 
@@ -247,7 +244,7 @@ void sched_init_RR(uint8 quantum)
 	scheduler_status = SCH_STOPPED;
 	scheduler_method = SCH_RR;
 
-	// Create 1 ready queue for the RR
+
 	num_of_ready_queues = 1;
 	env_ready_queues = kmalloc(sizeof(struct Env_Queue));
 	quantums = kmalloc(num_of_ready_queues * sizeof(uint8)) ;
@@ -391,7 +388,7 @@ void sched_run_all()
 		sched_remove_new(ptr_env);
 		sched_insert_ready(ptr_env);
 	}
-	/*2015*///if scheduler not run yet, then invoke it!
+
 	if (scheduler_status == SCH_STOPPED)
 		fos_scheduler();
 }
@@ -451,7 +448,7 @@ void sched_kill_all()
 		cprintf("No processes in EXIT queue\n");
 	}
 
-	//reinvoke the scheduler since there're no env to return back to it
+
 	curenv = NULL;
 	fos_scheduler();
 }
@@ -459,7 +456,7 @@ void sched_kill_all()
 
 void sched_new_env(struct Env* e)
 {
-	//add the given env to the scheduler NEW queue
+
 	if (e!=NULL)
 	{
 		sched_insert_new(e);
@@ -476,7 +473,7 @@ void sched_run_env(uint32 envId)
 			sched_remove_new(ptr_env);
 			sched_insert_ready(ptr_env);
 
-			/*2015*///if scheduler not run yet, then invoke it!
+
 			if (scheduler_status == SCH_STOPPED)
 			{
 				fos_scheduler();
@@ -499,7 +496,7 @@ void sched_exit_env(uint32 envId)
 			{
 				sched_remove_new(ptr_env);
 				found = 1;
-				//			return;
+
 			}
 				}
 	}
@@ -537,7 +534,7 @@ void sched_exit_env(uint32 envId)
 	{
 		sched_insert_exit(ptr_env);
 
-		//If it's the curenv, then reinvoke the scheduler as there's no meaning to return back to an exited env
+
 		if (curenv->env_id == envId)
 		{
 			curenv = NULL;
@@ -578,7 +575,7 @@ void sched_kill_env(uint32 envId)
 				start_env_free(ptr_env);
 				cprintf("DONE\n");
 				found = 1;
-				//			return;
+
 			}
 					}
 	}
@@ -599,7 +596,7 @@ void sched_kill_env(uint32 envId)
 						cprintf("DONE\n");
 						found = 1;
 						break;
-						//return;
+
 					}
 				}
 			}
@@ -619,7 +616,7 @@ void sched_kill_env(uint32 envId)
 				start_env_free(ptr_env);
 				cprintf("DONE\n");
 				found = 1;
-				//return;
+
 			}
 		}
 	}
@@ -636,11 +633,11 @@ void sched_kill_env(uint32 envId)
 			found = 1;
 		}
 	}
-	//If it's the curenv, then reset it and reinvoke the scheduler
-	//as there's no meaning to return back to a killed env
+
+
 	if (curenv->env_id == envId)
 	{
-		//lcr3(K_PHYSICAL_ADDRESS(ptr_page_directory));
+
 		lcr3(phys_page_directory);
 		curenv = NULL;
 		fos_scheduler();
@@ -651,13 +648,13 @@ void sched_kill_env(uint32 envId)
 
 void clock_interrupt_handler()
 {
-	//cputchar('i');
+
 
 	if(isPageReplacmentAlgorithmLRU())
 	{
 		update_WS_time_stamps();
 	}
-	//cprintf("Clock Handler\n") ;
+
 	fos_scheduler();
 }
 void update_WS_time_stamps()
@@ -672,7 +669,7 @@ void update_WS_time_stamps()
 			{
 				if( curr_env_ptr->ptr_pageWorkingSet[i].empty != 1)
 				{
-					//update the time if the page was referenced
+
 					uint32 page_va = curr_env_ptr->ptr_pageWorkingSet[i].virtual_address ;
 					uint32 perm = pt_get_page_permissions(curr_env_ptr, page_va) ;
 					uint32 oldTimeStamp = curr_env_ptr->ptr_pageWorkingSet[i].time_stamp;
@@ -696,7 +693,7 @@ void update_WS_time_stamps()
 			{
 				if( curr_env_ptr->__ptr_tws[t].empty != 1)
 				{
-					//update the time if the page was referenced
+
 					uint32 table_va = curr_env_ptr->__ptr_tws[t].virtual_address;
 					uint32 oldTimeStamp = curr_env_ptr->__ptr_tws[t].time_stamp;
 

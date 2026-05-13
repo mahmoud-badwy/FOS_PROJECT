@@ -21,14 +21,14 @@ void table_fault_handler(struct Env * curenv, uint32 fault_va);
 
 static struct Taskstate ts;
 
-//2014 Test Free(): Set it to bypass the PAGE FAULT on an instruction with this length and continue executing the next one
-// 0 means don't bypass the PAGE FAULT
+
+
 uint8 bypassInstrLength = 0;
 
 
-/// Interrupt descriptor table.  (Must be built at run time because
-/// shifted function addresses can't be represented in relocation records.)
-///
+
+
+
 
 struct Gatedesc idt[256] = { { 0 } };
 struct Pseudodesc idt_pd = {
@@ -46,14 +46,14 @@ extern  void (*ALL_FAULTS4)();
 extern  void (*ALL_FAULTS5)();
 extern  void (*ALL_FAULTS6)();
 extern  void (*ALL_FAULTS7)();
-//extern  void (*ALL_FAULTS8)();
-//extern  void (*ALL_FAULTS9)();
+
+
 extern  void (*ALL_FAULTS10)();
 extern  void (*ALL_FAULTS11)();
 extern  void (*ALL_FAULTS12)();
 extern  void (*ALL_FAULTS13)();
-//extern  void (*ALL_FAULTS14)();
-//extern  void (*ALL_FAULTS15)();
+
+
 extern  void (*ALL_FAULTS16)();
 extern  void (*ALL_FAULTS17)();
 extern  void (*ALL_FAULTS18)();
@@ -117,8 +117,8 @@ idt_init(void)
 {
 	extern struct Segdesc gdt[];
 
-	// LAB 3: Your code here.
-	//initialize idt
+
+
 	SETGATE(idt[T_PGFLT], 0, GD_KT , &PAGE_FAULT, 0) ;
 	SETGATE(idt[T_SYSCALL], 0, GD_KT , &SYSCALL_HANDLER, 3) ;
 	SETGATE(idt[T_DBLFLT], 0, GD_KT , &DBL_FAULT, 0) ;
@@ -132,14 +132,14 @@ idt_init(void)
 	SETGATE(idt[T_BOUND    ], 0, GD_KT , &ALL_FAULTS5, 3) ;
 	SETGATE(idt[T_ILLOP    ], 0, GD_KT , &ALL_FAULTS6, 3) ;
 	SETGATE(idt[T_DEVICE   ], 0, GD_KT , &ALL_FAULTS7, 3) ;
-	//SETGATE(idt[T_DBLFLT   ], 0, GD_KT , &ALL_FAULTS, 3) ;
-	//SETGATE(idt[], 0, GD_KT , &ALL_FAULTS, 3) ;
+
+
 	SETGATE(idt[T_TSS      ], 0, GD_KT , &ALL_FAULTS10, 3) ;
 	SETGATE(idt[T_SEGNP    ], 0, GD_KT , &ALL_FAULTS11, 3) ;
 	SETGATE(idt[T_STACK    ], 0, GD_KT , &ALL_FAULTS12, 3) ;
 	SETGATE(idt[T_GPFLT    ], 0, GD_KT , &ALL_FAULTS13, 3) ;
-	//SETGATE(idt[T_PGFLT    ], 0, GD_KT , &ALL_FAULTS, 3) ;
-	//SETGATE(idt[ne T_RES   ], 0, GD_KT , &ALL_FAULTS, 3) ;
+
+
 	SETGATE(idt[T_FPERR    ], 0, GD_KT , &ALL_FAULTS16, 3) ;
 	SETGATE(idt[T_ALIGN    ], 0, GD_KT , &ALL_FAULTS17, 3) ;
 	SETGATE(idt[T_MCHK     ], 0, GD_KT , &ALL_FAULTS18, 3) ;
@@ -165,20 +165,20 @@ idt_init(void)
 
 
 
-	// Setup a TSS so that we get the right stack
-	// when we trap to the kernel.
+
+
 	ts.ts_esp0 = KERNEL_STACK_TOP;
 	ts.ts_ss0 = GD_KD;
 
-	// Initialize the TSS field of the gdt.
+
 	gdt[GD_TSS >> 3] = SEG16(STS_T32A, (uint32) (&ts),
 			sizeof(struct Taskstate), 0);
 	gdt[GD_TSS >> 3].sd_s = 0;
 
-	// Load the TSS
+
 	ltr(GD_TSS);
 
-	// Load the IDT
+
 	asm volatile("lidt idt_pd");
 }
 void __page_fault_handler_with_buffering(struct Env * curenv, uint32 fault_va)
@@ -214,16 +214,16 @@ void print_regs(struct PushRegs *regs)
 
 static void trap_dispatch(struct Trapframe *tf)
 {
-	// Handle processor exceptions.
-	// LAB 3: Your code here.
+
+
 
 	if(tf->tf_trapno == T_PGFLT)
 	{
-		//print_trapframe(tf);
+
 		if(isPageReplacmentAlgorithmLRU())
 		{
-			//cprintf("===========Table WS before updating time stamp========\n");
-			//env_table_ws_print(curenv) ;
+
+
 			update_WS_time_stamps();
 		}
 		fault_handler(tf);
@@ -249,14 +249,14 @@ static void trap_dispatch(struct Trapframe *tf)
 
 	else
 	{
-		// Unexpected trap: The user process or the kernel has a bug.
-		//print_trapframe(tf);
+
+
 		if (tf->tf_cs == GD_KT)
 		{
 			panic("unhandled trap in kernel");
 		}
 		else {
-			//env_destroy(curenv);
+
 			return;
 		}
 	}
@@ -276,8 +276,8 @@ void trap(struct Trapframe *tf)
 	}
 	if(tf->tf_trapno == IRQ0_Clock)
 	{
-		//		uint16 cnt0 = kclock_read_cnt0() ;
-		//		cprintf("CLOCK INTERRUPT: Counter0 Value = %d\n", cnt0 );
+
+
 
 		if (userTrap)
 		{
@@ -286,7 +286,7 @@ void trap(struct Trapframe *tf)
 		}
 	}
 	else if (tf->tf_trapno == T_PGFLT){
-		//2016: Bypass the faulted instruction
+
 		if (bypassInstrLength != 0){
 			if (userTrap){
 				curenv->env_tf.tf_eip = (uint32*)((uint32)(curenv->env_tf.tf_eip) + bypassInstrLength);
@@ -305,10 +305,10 @@ void trap(struct Trapframe *tf)
 		assert(curenv && curenv->env_status == ENV_RUNNABLE);
 		env_run(curenv);
 	}
-	/* 2019
-	 * If trap from kernel, then return to the called kernel function using the passed param "tf"
-	 * not the user one that's stored in curenv
-	 */
+
+
+
+
 	else
 	{
 		env_pop_tf((tf));
@@ -319,14 +319,14 @@ void setPageReplacmentAlgorithmLRU(){_PageRepAlgoType = PG_REP_LRU;}
 void setPageReplacmentAlgorithmCLOCK(){_PageRepAlgoType = PG_REP_CLOCK;}
 void setPageReplacmentAlgorithmFIFO(){_PageRepAlgoType = PG_REP_FIFO;}
 void setPageReplacmentAlgorithmModifiedCLOCK(){_PageRepAlgoType = PG_REP_MODIFIEDCLOCK;}
-//2021
+
 void setPageReplacmentAlgorithmNchanceCLOCK(int PageWSMaxSweeps){_PageRepAlgoType = PG_REP_NchanceCLOCK;  page_WS_max_sweeps = PageWSMaxSweeps;}
 
 uint32 isPageReplacmentAlgorithmLRU(){if(_PageRepAlgoType == PG_REP_LRU) return 1; return 0;}
 uint32 isPageReplacmentAlgorithmCLOCK(){if(_PageRepAlgoType == PG_REP_CLOCK) return 1; return 0;}
 uint32 isPageReplacmentAlgorithmFIFO(){if(_PageRepAlgoType == PG_REP_FIFO) return 1; return 0;}
 uint32 isPageReplacmentAlgorithmModifiedCLOCK(){if(_PageRepAlgoType == PG_REP_MODIFIEDCLOCK) return 1; return 0;}
-//2021
+
 uint32 isPageReplacmentAlgorithmNchanceCLOCK(){if(_PageRepAlgoType == PG_REP_NchanceCLOCK) return 1; return 0;}
 
 void enableModifiedBuffer(uint32 enableIt){_EnableModifiedBuffer = enableIt;}
@@ -346,24 +346,24 @@ void detect_modified_loop()
 
 
 	while (slowPtr && fastPtr) {
-		fastPtr = LIST_NEXT(fastPtr); // advance the fast pointer
-		if (fastPtr == slowPtr) // and check if its equal to the slow pointer
+		fastPtr = LIST_NEXT(fastPtr);
+		if (fastPtr == slowPtr)
 		{
 			cprintf("loop detected in modiflist\n");
 			break;
 		}
 
 		if (fastPtr == NULL) {
-			break; // since fastPtr is NULL we reached the tail
+			break;
 		}
 
-		fastPtr = LIST_NEXT(fastPtr); //advance and check again
+		fastPtr = LIST_NEXT(fastPtr);
 		if (fastPtr == slowPtr) {
 			cprintf("loop detected in modiflist\n");
 			break;
 		}
 
-		slowPtr = LIST_NEXT(slowPtr); // advance the slow pointer only once
+		slowPtr = LIST_NEXT(slowPtr);
 	}
 	cprintf("finished modi loop detection\n");
 }
@@ -374,46 +374,46 @@ void fault_handler(struct Trapframe *tf)
 	if ((tf->tf_cs & 3) == 3) {
 		userTrap = 1;
 	}
-	//print_trapframe(tf);
+
 	uint32 fault_va;
 
-	// Read processor's CR2 register to find the faulting address
+
 	fault_va = rcr2();
 
-	//2017: Check stack overflow for Kernel
+
 	if (!userTrap)
 	{
 		if (fault_va < KERNEL_STACK_TOP - KERNEL_STACK_SIZE && fault_va >= USER_LIMIT)
 			panic("Kernel: stack overflow exception!");
 	}
-	//2017: Check stack underflow for User
+
 	else
 	{
 		if (fault_va >= USTACKTOP)
 			panic("User: stack underflow exception!");
 	}
 
-	//get a pointer to the environment that caused the fault at runtime
+
 	struct Env* faulted_env = curenv;
 
-	//check the faulted address, is it a table or not ?
-	//If the directory entry of the faulted address is NOT PRESENT then
+
+
 	if ( (curenv->env_page_directory[PDX(fault_va)] & PERM_PRESENT) != PERM_PRESENT)
 	{
-		// we have a table fault =============================================================
-		//		cprintf("[%s] user TABLE fault va %08x\n", curenv->prog_name, fault_va);
+
+
 		faulted_env->tableFaultsCounter ++ ;
 
 		table_fault_handler(faulted_env, fault_va);
 	}
 	else
 	{
-		// we have normal page fault =============================================================
+
 		faulted_env->pageFaultsCounter ++ ;
 
-		//cprintf("[%08s] user PAGE fault va %08x\n", curenv->prog_name, fault_va);
-		//cprintf("\nPage working set BEFORE fault handler...\n");
-		//print_page_working_set_or_LRUlists(curenv);
+
+
+
 
 		if(isBufferingEnabled())
 		{
@@ -423,25 +423,25 @@ void fault_handler(struct Trapframe *tf)
 		{
 			page_fault_handler(faulted_env, fault_va);
 		}
-		//		cprintf("\nPage working set AFTER fault handler...\n");
-		//		print_page_working_set_or_LRUlists(curenv);
+
+
 
 
 	}
 
-	/*************************************************************/
-	//Refresh the TLB cache
+
+
 	tlbflush();
-	/*************************************************************/
+
 
 }
 
 
-//Handle the table fault
+
 void table_fault_handler(struct Env * curenv, uint32 fault_va)
 {
-	//panic("table_fault_handler() is not implemented yet...!!");
-	//Check if it's a stack page
+
+
 	uint32* ptr_table;
 	if(USE_KHEAP)
 	{
@@ -454,28 +454,34 @@ void table_fault_handler(struct Env * curenv, uint32 fault_va)
 
 }
 
-//Handle the page fault
-void page_fault_handler(struct Env * curenv, uint32 fault_va)
+
+void page_fault_handler(struct Env *curenv, uint32 fault_va)
 {
-	//TODO: [PROJECT 2026 -[5] Fault handler] page_fault_handler()
-	// Write your code here, remove the panic and write your code
 	uint32 fault_page_va = ROUNDDOWN(fault_va, PAGE_SIZE);
 	uint32 ws_size = env_page_ws_get_size(curenv);
+
+	uint32 *ptr_table = NULL;
+	if (get_page_table(curenv->env_page_directory, (void *)fault_page_va, &ptr_table) == TABLE_NOT_EXIST)
+	{
+		table_fault_handler(curenv, fault_page_va);
+	}
 
 	if (ws_size < curenv->page_WS_max_size)
 	{
 		struct Frame_Info *ptr_frame_info = NULL;
-		allocate_frame(&ptr_frame_info);
-		map_frame(curenv->env_page_directory, ptr_frame_info, (void*)fault_page_va, PERM_USER | PERM_WRITEABLE);
+		if (allocate_frame(&ptr_frame_info) == E_NO_MEM)
+			panic("No free frames while handling page fault");
 
-		int pf_res = pf_read_env_page(curenv, (void*)fault_page_va);
+		map_frame(curenv->env_page_directory, ptr_frame_info, (void *)fault_page_va,
+		          PERM_PRESENT | PERM_USER | PERM_WRITEABLE);
+
+		int pf_res = pf_read_env_page(curenv, (void *)fault_page_va);
 		if (pf_res == E_PAGE_NOT_EXIST_IN_PF)
 		{
 			if (fault_page_va >= USTACKBOTTOM && fault_page_va < USTACKTOP)
 			{
 				if (pf_add_empty_env_page(curenv, fault_page_va, 1) == E_NO_PAGE_FILE_SPACE)
 					panic("Page file is full while adding stack page");
-				pf_read_env_page(curenv, (void*)fault_page_va);
 			}
 			else
 			{
@@ -484,14 +490,9 @@ void page_fault_handler(struct Env * curenv, uint32 fault_va)
 		}
 
 		uint32 ws_index = curenv->page_last_WS_index;
-		for (uint32 i = 0; i < curenv->page_WS_max_size; i++)
+		while (!env_page_ws_is_entry_empty(curenv, ws_index))
 		{
-			uint32 idx = (ws_index + i) % curenv->page_WS_max_size;
-			if (env_page_ws_is_entry_empty(curenv, idx))
-			{
-				ws_index = idx;
-				break;
-			}
+			ws_index = (ws_index + 1) % curenv->page_WS_max_size;
 		}
 
 		env_page_ws_set_entry(curenv, ws_index, fault_page_va);
@@ -500,55 +501,65 @@ void page_fault_handler(struct Env * curenv, uint32 fault_va)
 		return;
 	}
 
-	// Replacement using Nth Chance CLOCK
-	uint32 victim_index = curenv->page_last_WS_index;
-	uint32 victim_va = 0;
-	while (1)
+
+	uint32 victim_index = -1;
+
+	while (victim_index == -1)
 	{
-		struct WorkingSetElement *ws_elem = &curenv->ptr_pageWorkingSet[victim_index];
-		if (ws_elem->empty == 0)
+		for (uint32 i = 0; i < curenv->page_WS_max_size; i++)
 		{
-			victim_va = ws_elem->virtual_address;
-			uint32 perm = pt_get_page_permissions(curenv, victim_va);
+			struct WorkingSetElement *ws_elem = &curenv->ptr_pageWorkingSet[i];
+
+			if (ws_elem->empty)
+				continue;
+
+			uint32 va = ws_elem->virtual_address;
+			uint32 perm = pt_get_page_permissions(curenv, va);
+
 			if (perm & PERM_USED)
 			{
-				pt_set_page_permissions(curenv, victim_va, 0, PERM_USED);
+				pt_set_page_permissions(curenv, va, 0, PERM_USED);
 				ws_elem->sweeps_counter = 0;
 			}
 			else
 			{
-				if (ws_elem->sweeps_counter >= page_WS_max_sweeps)
-				{
-					break;
-				}
-				ws_elem->sweeps_counter++;
+				if (ws_elem->sweeps_counter < page_WS_max_sweeps)
+					ws_elem->sweeps_counter++;
+
+				if (ws_elem->sweeps_counter >= page_WS_max_sweeps && victim_index == -1)
+					victim_index = i;
 			}
 		}
-		victim_index = (victim_index + 1) % curenv->page_WS_max_size;
 	}
 
+	uint32 victim_va = curenv->ptr_pageWorkingSet[victim_index].virtual_address;
+
 	uint32 *ptr_page_table = NULL;
-	struct Frame_Info *victim_frame = get_frame_info(curenv->env_page_directory, (void*)victim_va, &ptr_page_table);
-	uint32 victim_perm = pt_get_page_permissions(curenv, victim_va);
-	if (victim_perm & PERM_MODIFIED)
+	struct Frame_Info *victim_frame =
+		get_frame_info(curenv->env_page_directory, (void *)victim_va, &ptr_page_table);
+
+	if (pt_get_page_permissions(curenv, victim_va) & PERM_MODIFIED)
 	{
-		pf_update_env_page(curenv, (void*)victim_va, victim_frame);
+		pf_update_env_page(curenv, (void *)victim_va, victim_frame);
 	}
-	unmap_frame(curenv->env_page_directory, (void*)victim_va);
+
+	unmap_frame(curenv->env_page_directory, (void *)victim_va);
 	env_page_ws_clear_entry(curenv, victim_index);
 
 	struct Frame_Info *new_frame = NULL;
-	allocate_frame(&new_frame);
-	map_frame(curenv->env_page_directory, new_frame, (void*)fault_page_va, PERM_USER | PERM_WRITEABLE);
+	if (allocate_frame(&new_frame) == E_NO_MEM)
+		panic("No free frames while handling page fault");
 
-	int pf_res = pf_read_env_page(curenv, (void*)fault_page_va);
+	map_frame(curenv->env_page_directory, new_frame, (void *)fault_page_va,
+	          PERM_PRESENT | PERM_USER | PERM_WRITEABLE);
+
+	int pf_res = pf_read_env_page(curenv, (void *)fault_page_va);
 	if (pf_res == E_PAGE_NOT_EXIST_IN_PF)
 	{
 		if (fault_page_va >= USTACKBOTTOM && fault_page_va < USTACKTOP)
 		{
 			if (pf_add_empty_env_page(curenv, fault_page_va, 1) == E_NO_PAGE_FILE_SPACE)
 				panic("Page file is full while adding stack page");
-			pf_read_env_page(curenv, (void*)fault_page_va);
 		}
 		else
 		{
@@ -559,8 +570,4 @@ void page_fault_handler(struct Env * curenv, uint32 fault_va)
 	env_page_ws_set_entry(curenv, victim_index, fault_page_va);
 	curenv->ptr_pageWorkingSet[victim_index].sweeps_counter = 0;
 	curenv->page_last_WS_index = (victim_index + 1) % curenv->page_WS_max_size;
-
-
-
-
 }
